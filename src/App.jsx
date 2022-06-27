@@ -2,15 +2,17 @@
 import './App.css'
 import {useState,useEffect} from 'react'
 import axios from 'axios'
-import Localbase from 'localbase'
-
+import Dexie from 'dexie'
+import { useLiveQuery } from "dexie-react-hooks";
 
 
 
 function App() {
   
-  let db = new Localbase('db')
-
+  const db = new Dexie('caches');
+    db.version(1).stores({
+      videos: '++id, vid', // Primary key and indexed props
+  });
 
   useEffect(()=>{
     const fetchVid= async ()=>{
@@ -18,27 +20,25 @@ function App() {
       const request = indexedDB.open('cacheVid', 1);
       const query1 =  await axios.get('https://media.istockphoto.com/videos/woodworker-drills-holes-in-wooden-plank-with-drilling-machine-in-slow-video-id1306134996').then(  res=>  {
         const myUrl = (window.URL || window.webkitURL).createObjectURL( new Blob([res.data]) )
-        db.collection('videos').add({
-          id: 1,
+        const id =  db.videos.add({
           vid:myUrl
-        })
+        });
       });
         
       const query2 =  await axios.get('https://media.istockphoto.com/videos/woodworker-drills-holes-in-wooden-plank-with-drilling-machine-in-slow-video-id1306134996').then( res=>{
         const myUrl = (window.URL || window.webkitURL).createObjectURL( new Blob([res.data]) )
-        db.collection('videos').add({
-          id: 2,
+        const id =  db.videos.add({
           vid:myUrl
-        })
+        });
       })
       setLoading(false);
     }
     fetchVid();
   },[])
 
-  var data = db.collection('videos').get().then(res => {
-    data = res
-  })
+  const video = useLiveQuery(
+    () => db.videos.toArray()
+  );
  
   const[loading,setLoading] =useState(true)
   const[vid,setVid] = useState('');
@@ -49,7 +49,7 @@ function App() {
 
   return (
     <div className="App">
-      {console.log(data}
+      {console.log(video)}
       {/* {loading?<p>loading...</p>:
       <video loop autoPlay muted id='bgrVideo' onEnded={handleEnd}>
           <source src={vid} />Your browser does not support the video tag.

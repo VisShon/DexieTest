@@ -9,6 +9,10 @@ import { useLiveQuery } from "dexie-react-hooks";
 
 function App() {
   
+  const[loading,setLoading] =useState(true)
+  const[vid,setVid] = useState(null);
+
+
   const db = new Dexie('caches');
     db.version(1).stores({
       videos: '++id, vid', // Primary key and indexed props
@@ -17,43 +21,32 @@ function App() {
   useEffect(()=>{
     const fetchVid= async ()=>{
       setLoading(true);
+
+      let myUrl=null;
       const request = indexedDB.open('cacheVid', 1);
-      const query1 =  await axios.get('https://media.istockphoto.com/videos/woodworker-drills-holes-in-wooden-plank-with-drilling-machine-in-slow-video-id1306134996').then(  res=>  {
-        const myUrl = (window.URL || window.webkitURL).createObjectURL( new Blob([res.data]) )
-        const id =  db.videos.add({
-          vid:myUrl
-        });
+      const query1 =  await axios.get('https://file-examples.com/wp-content/uploads/2017/04/file_example_MP4_640_3MG.mp4').then(  res=>  {
+        myUrl = window.URL.createObjectURL( new Blob([res.data]) )
       });
-        
-      const query2 =  await axios.get('https://media.istockphoto.com/videos/woodworker-drills-holes-in-wooden-plank-with-drilling-machine-in-slow-video-id1306134996').then( res=>{
-        const myUrl = (window.URL || window.webkitURL).createObjectURL( new Blob([res.data]) )
-        const id =  db.videos.add({
-          vid:myUrl
-        });
-      })
+      const id1 = await db.videos.add({
+        vid:myUrl
+      });  
+      setVid(await db.videos.where('id').equals(1).toArray());
       setLoading(false);
     }
     fetchVid();
   },[])
-
-  const video = useLiveQuery(
-    () => db.videos.toArray()
-  );
  
-  const[loading,setLoading] =useState(true)
-  const[vid,setVid] = useState('');
-  const handleEnd=()=>{
-      setVid('')
+  const handleEnd= async ()=>{
+    setVid(await db.videos.where('id').equals(2).toArray());
   }
 
 
   return (
     <div className="App">
-      {console.log(video)}
-      {/* {loading?<p>loading...</p>:
-      <video loop autoPlay muted id='bgrVideo' onEnded={handleEnd}>
-          <source src={vid} />Your browser does not support the video tag.
-      </video> } */}
+      {loading?<p>loading...</p>:
+      <video loop autoPlay muted id='bgrVideo'>
+          <source src={vid[0].vid} />Your browser does not support the video tag.
+      </video> }
     </div>
   )
 }
